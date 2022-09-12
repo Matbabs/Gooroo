@@ -1,3 +1,9 @@
+// The Gooroo package gathers a set of cumulative functions allowing you
+// to create web applications on the Frontend side.
+// To do this purpose, it implements DOM manipulation features based on syscall/js
+// and webassembly.
+// Its objective is to explore the possibilities of a modern, lightweight and
+// javascript independent web library.
 package gooroo
 
 import (

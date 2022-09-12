@@ -1,3 +1,4 @@
+// It is an HTML, CSS, JS lexer to a set of Go constants.
 package dom
 
 const ELEMENT_PARAM = "@@"

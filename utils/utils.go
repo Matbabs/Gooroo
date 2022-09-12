@@ -1,3 +1,4 @@
+// This package describes the private utility and generic functions to the other methods of the main gooroo package.
 package utils
 
 import (
