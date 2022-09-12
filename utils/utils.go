@@ -26,6 +26,13 @@ func MapInit[T any](key string, _map map[string]T, value T) {
 	}
 }
 
+func MapInitCallback[T any](key string, _map map[string]T, callback func() T) {
+	_, isPresent := _map[key]
+	if !isPresent {
+		_map[key] = callback()
+	}
+}
+
 func CallerToKey(file string, no int) string {
 	return fmt.Sprintf("%s#%d", file, no)
 }

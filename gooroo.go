@@ -27,6 +27,7 @@ var stylesheets = []string{}
 var state = make(chan bool)
 var bindings = make(map[string][]DomBinding)
 var store = make(map[string]*DomStore)
+var storeMemo = make(map[string]any)
 var storeCallback = make(map[string]*func(...any) any)
 
 // Manipulate DOM
@@ -155,6 +156,16 @@ func UseCallback(callback func(...any) any, variables ...*any) *func(...any) any
 		storeCallback[key] = &callback
 	}
 	return storeCallback[key]
+}
+
+func UseMemo(callback func() any, variables ...*any) any {
+	_, file, no, _ := runtime.Caller(1)
+	key := utils.CallerToKey(file, no)
+	utils.MapInitCallback(key, storeMemo, callback)
+	if len(variables) == 0 || detectHasChanged(variables...) {
+		storeMemo[key] = callback()
+	}
+	return storeMemo[key]
 }
 
 // Generate code for the DOM
