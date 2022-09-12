@@ -20,6 +20,12 @@ javascript independent web library.
 
 ## Conditions & Loops
 
-## Bindings
+## Params
+
+### Generic Params
+
+### Binding Params
+
+### Layout Params
 
 ## Use hooks !
