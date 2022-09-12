@@ -428,3 +428,13 @@ func AnyInt(v any) int {
 	x, _ := strconv.Atoi(fmt.Sprintf("%v", v))
 	return x
 }
+
+func AnyFlt(v any) float64 {
+	x, _ := strconv.ParseFloat(fmt.Sprintf("%v", v), 64)
+	return x
+}
+
+func AnyBol(v any) bool {
+	x, _ := strconv.ParseBool(fmt.Sprintf("%v", v))
+	return x
+}

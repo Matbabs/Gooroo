@@ -10,6 +10,8 @@ import (
 type Person struct {
 	name string
 	age  int
+	has  bool
+	flt  float64
 }
 
 func App() o.DomComponent {
@@ -17,7 +19,9 @@ func App() o.DomComponent {
 	o.Css("")
 
 	name, _ := o.UseState("")
-	age, _ := o.UseState(nil)
+	age, _ := o.UseState("42")
+	_bool, _ := o.UseState("FALSE")
+	_flt, _ := o.UseState("0.3")
 	p, setP := o.UseState(Person{})
 
 	o.UseEffect(func() {
@@ -29,7 +33,8 @@ func App() o.DomComponent {
 	}, name)
 
 	handleSubmit := func(e js.Value) {
-		setP(Person{o.AnyStr(*name), o.AnyInt(*age)})
+		fmt.Println(*_bool)
+		setP(Person{o.AnyStr(*name), o.AnyInt(*age), o.AnyBol(*_bool), o.AnyFlt(*_flt)})
 	}
 
 	handleCall := o.UseCallback(func(a ...any) any {
@@ -50,7 +55,7 @@ func App() o.DomComponent {
 			o.Input(o.OnChange(age), o.Type("number")),
 			o.Button("Click", o.OnClick(handleSubmit), o.Title(666)),
 			o.If(*age != nil,
-				o.P((*p).(Person).age),
+				o.P(*p),
 			),
 		),
 	)
