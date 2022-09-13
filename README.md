@@ -1,6 +1,6 @@
 <div style="text-align: center">
  <h1>A web frontend library in Go ( WebAssembly ) </h1>
- <img src="./assets/logo.png" height="200"/>
+ <img src="./assets/logo.png" max-height="200"/>
   <h2> Dare to imagine web development without JavaScript </h2>
 </div>
 
