@@ -29,7 +29,7 @@ func App() o.DomComponent {
 	}
 
 	handleMemo := o.UseMemo(func() any {
-		return 1 + 2
+		return nil
 	}, name)
 
 	fmt.Println(handleMemo)
@@ -40,12 +40,12 @@ func App() o.DomComponent {
 		o.Div(o.GridLayout(3, 0, "20px"),
 			o.Span("Name"),
 			o.Span("Age"),
-			o.Span(nil),
+			o.Span("42"),
 			o.Input(o.OnChange(name)),
 			o.Input(o.OnChange(age), o.Type("number")),
-			o.Button("Click", o.OnClick(handleSubmit), o.Title(666)),
+			o.Button("Click", o.OnClick(handleSubmit), o.Title("")),
 			o.If(*age != nil,
-				o.P(*p),
+				o.P((*p).(Person).age),
 			),
 		),
 	)

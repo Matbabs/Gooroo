@@ -229,13 +229,13 @@ func Div(insiders ...DomComponent) DomComponent {
 	return htmlDomComponent(dom.HTML_DIV_OPENER, dom.HTML_DIV_CLOSER, insiders...)
 }
 
-func P(text any, insiders ...DomComponent) DomComponent {
+func P[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
 	textStr := AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_P_OPENER, textStr), dom.HTML_P_CLOSER, insiders...)
 }
 
-func Span(text any, insiders ...DomComponent) DomComponent {
+func Span[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
 	textStr := AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_SPAN_OPENER, textStr), dom.HTML_SPAN_CLOSER, insiders...)
@@ -265,31 +265,31 @@ func Td(insiders ...DomComponent) DomComponent {
 	return htmlDomComponent(dom.HTML_TD_OPENER, dom.HTML_TD_CLOSER, insiders...)
 }
 
-func H1(text any, insiders ...DomComponent) DomComponent {
+func H1[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
 	textStr := AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_H1_OPENER, textStr), dom.HTML_H1_CLOSER, insiders...)
 }
 
-func H2(text any, insiders ...DomComponent) DomComponent {
+func H2[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
 	textStr := AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_H2_OPENER, textStr), dom.HTML_H2_CLOSER, insiders...)
 }
 
-func H3(text any, insiders ...DomComponent) DomComponent {
+func H3[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
 	textStr := AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_H3_OPENER, textStr), dom.HTML_H3_CLOSER, insiders...)
 }
 
-func H4(text any, insiders ...DomComponent) DomComponent {
+func H4[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
 	textStr := AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_H4_OPENER, textStr), dom.HTML_H4_CLOSER, insiders...)
 }
 
-func A(text any, insiders ...DomComponent) DomComponent {
+func A[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
 	textStr := AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_A_OPENER, textStr), dom.HTML_A_CLOSER, insiders...)
@@ -307,7 +307,7 @@ func Select(insiders ...DomComponent) DomComponent {
 	return htmlDomComponent(dom.HTML_SELECT_OPENER, dom.HTML_SELECT_CLOSER, insiders...)
 }
 
-func Option(text any, insiders ...DomComponent) DomComponent {
+func Option[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
 	textStr := AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_OPTION_OPENER, textStr), dom.HTML_OPTION_CLOSER, insiders...)
@@ -317,7 +317,7 @@ func Input(insiders ...DomComponent) DomComponent {
 	return htmlDomComponent(dom.HTML_INPUT_OPENER, "", insiders...)
 }
 
-func Button(text any, insiders ...DomComponent) DomComponent {
+func Button[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
 	textStr := AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_BUTTON_OPENER, textStr), dom.HTML_BUTTON_CLOSER, insiders...)
@@ -333,90 +333,77 @@ func Br() DomComponent {
 
 // DomComponentsParams
 
-func ClassName(className any) DomComponent {
-	classNameStr := AnyStr(className)
-	sanitizeHtml(&classNameStr)
+func ClassName(className string) DomComponent {
+	sanitizeHtml(&className)
 	return func() string {
-		return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_CLASSNAME, classNameStr)
+		return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_CLASSNAME, className)
 	}
 }
 
-func Style(style any) DomComponent {
-	styleStr := AnyStr(style)
-	sanitizeHtml(&styleStr)
-	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_STYLE, styleStr) }
+func Style(style string) DomComponent {
+	sanitizeHtml(&style)
+	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_STYLE, style) }
 }
 
-func Href(href any) DomComponent {
-	hrefStr := AnyStr(href)
-	sanitizeHtml(&hrefStr)
-	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_HREF, hrefStr) }
+func Href(href string) DomComponent {
+	sanitizeHtml(&href)
+	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_HREF, href) }
 }
 
-func Src(src any) DomComponent {
-	srcStr := AnyStr(src)
-	sanitizeHtml(&srcStr)
-	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_SRC, srcStr) }
+func Src(src string) DomComponent {
+	sanitizeHtml(&src)
+	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_SRC, src) }
 }
 
-func Value(value any) DomComponent {
-	valueStr := AnyStr(value)
-	sanitizeHtml(&valueStr)
-	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_VALUE, valueStr) }
+func Value(value string) DomComponent {
+	sanitizeHtml(&value)
+	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_VALUE, value) }
 }
 
-func Id(id any) DomComponent {
-	idStr := AnyStr(id)
-	sanitizeHtml(&idStr)
-	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_TYPE, idStr) }
+func Id(id string) DomComponent {
+	sanitizeHtml(&id)
+	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_TYPE, id) }
 }
 
-func Type(_type any) DomComponent {
-	typeStr := AnyStr(_type)
-	sanitizeHtml(&typeStr)
-	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_TYPE, typeStr) }
+func Type(_type string) DomComponent {
+	sanitizeHtml(&_type)
+	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_TYPE, _type) }
 }
 
-func Placeholder(placeholder any) DomComponent {
-	placeholderStr := AnyStr(placeholder)
-	sanitizeHtml(&placeholderStr)
+func Placeholder(placeholder string) DomComponent {
+	sanitizeHtml(&placeholder)
 	return func() string {
-		return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_PLACEHOLDER, placeholderStr)
+		return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_PLACEHOLDER, placeholder)
 	}
 }
 
-func Title(title any) DomComponent {
-	titleStr := AnyStr(title)
-	sanitizeHtml(&titleStr)
-	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_TITLE, titleStr) }
+func Title(title string) DomComponent {
+	sanitizeHtml(&title)
+	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_TITLE, title) }
 }
 
 // DomComponentsParamsStructure
 
-func FlexLayout(flow any, justify any, align any, gap any) DomComponent {
-	flowStr := AnyStr(flow)
-	justifyStr := AnyStr(justify)
-	alignStr := AnyStr(align)
+func FlexLayout[T string | int | int32 | int64 | float32 | float64](flow string, justify string, align string, gap T) DomComponent {
 	gapStr := AnyStr(gap)
-	sanitizeHtml(&flowStr)
-	sanitizeHtml(&justifyStr)
-	sanitizeHtml(&alignStr)
+	sanitizeHtml(&flow)
+	sanitizeHtml(&justify)
+	sanitizeHtml(&align)
 	sanitizeHtml(&gapStr)
 	layout := fmt.Sprintf("%s %s;%s %s;%s %s;%s %s;%s %s", dom.CSS_PARAM_DISPLAY, dom.CSS_PARAM_DISPLAY_FLEX,
-		dom.CSS_PARAM_FLOW, flowStr, dom.CSS_PARAM_JUSTIFY, justifyStr, dom.CSS_PARAM_ALIGN, alignStr, dom.CSS_PARAM_GAP, gapStr)
+		dom.CSS_PARAM_FLOW, flow, dom.CSS_PARAM_JUSTIFY, justify, dom.CSS_PARAM_ALIGN, align, dom.CSS_PARAM_GAP, gapStr)
 	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_STYLE, layout) }
 }
 
-func GridLayout(columns any, rows any, gap any) DomComponent {
+func GridLayout[T string | int | int32 | int64 | float32 | float64](columns T, rows T, gap string) DomComponent {
 	columnsStr := AnyStr(columns)
 	rowsStr := AnyStr(rows)
-	gapStr := AnyStr(gap)
 	sanitizeHtml(&columnsStr)
 	sanitizeHtml(&rowsStr)
-	sanitizeHtml(&gapStr)
+	sanitizeHtml(&gap)
 	layout := fmt.Sprintf("%s %s;%s %s%s%s;%s %s%s%s;%s %s", dom.CSS_PARAM_DISPLAY, dom.CSS_PARAM_DISPLAY_GRID,
 		dom.CSS_PARAM_GRID_COLUMNS, dom.CSS_PARAM_GRID_REPEAT_OPENER, columnsStr, dom.CSS_PARAM_GRID_REPEAT_CLOSER,
-		dom.CSS_PARAM_GRID_ROWS, dom.CSS_PARAM_GRID_REPEAT_OPENER, rowsStr, dom.CSS_PARAM_GRID_REPEAT_CLOSER, dom.CSS_PARAM_GAP, gapStr)
+		dom.CSS_PARAM_GRID_ROWS, dom.CSS_PARAM_GRID_REPEAT_OPENER, rowsStr, dom.CSS_PARAM_GRID_REPEAT_CLOSER, dom.CSS_PARAM_GAP, gap)
 	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_STYLE, layout) }
 }
 
