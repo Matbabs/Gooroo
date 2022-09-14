@@ -2,7 +2,7 @@
  <h1>A web frontend library in Go ( WebAssembly ) </h1>
  <img src="./assets/logo.png" max-height="200"/>
   <h2> Dare to imagine web development without JavaScript </h2>
-  [![Go Reference](https://pkg.go.dev/badge/github.com/Matbabs/Gooroo.svg)](https://pkg.go.dev/github.com/Matbabs/Gooroo)
+  <a href="https://pkg.go.dev/github.com/Matbabs/Gooroo"><img src="https://pkg.go.dev/badge/github.com/Matbabs/Gooroo.svg" alt="Go Reference"></a>
 </div>
 
 
