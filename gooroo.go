@@ -17,12 +17,21 @@ import (
 	"github.com/Matbabs/Gooroo/utils"
 )
 
+// DomComponent represents an element of the DOM. This element can be a tag, an attribute,
+// a layout or even a binding. Most DomElements can be nested within each other thanks to
+// variadic parameters.
 type DomComponent func() string
+
+// DomBinding is a structure that allows to retain the link between an event, a callback function
+// and a potential value to update when the event is triggered.
+// All binding is reapplied during rendering.
 type DomBinding struct {
 	event    string
 	callback js.Func
 	value    *any
 }
+
+// DomStore allows to keep the state of change of a value in the store.
 type DomStore struct {
 	value      any
 	hasChanged bool
@@ -38,6 +47,7 @@ var storeCallback = make(map[string]*func(...any) any)
 
 // Manipulate DOM
 
+// Hangs a CSS file in the <head> content of the website.
 func Css(filepath string) {
 	if !utils.Contains(stylesheets, filepath) {
 		stylesheets = append(stylesheets, filepath)
@@ -48,6 +58,7 @@ func Css(filepath string) {
 	}
 }
 
+// Triggers a rendering of the DOM, of all the DomElements declared in parameters.
 func Html(domComponents ...DomComponent) {
 	for i := range domComponents {
 		elem := document.Call(dom.JS_CREATE_ELEMENT, dom.HTML_DIV)
@@ -57,16 +68,20 @@ func Html(domComponents ...DomComponent) {
 	setBindings()
 }
 
+// Clean the content of a string to prevent injections related to innerHtml attributes.
 func sanitizeHtml(htmlStr *string) {
 	tmp := document.Call(dom.JS_CREATE_ELEMENT, dom.HTML_DIV)
 	tmp.Set(dom.JS_INNER_HTML, *htmlStr)
 	*htmlStr = tmp.Get(dom.JS_TEXT_CONTENT).String()
 }
 
+// Removes the whole rendering from the DOM, including the DomElements passed as parameters
+// in the Html() function.
 func clearContext() {
 	document.Get(dom.HTML_BODY).Set(dom.JS_INNER_HTML, "")
 }
 
+// Create a functional DomBinding set on its parameters.
 func generateBinding(event string, value *any, callbacks ...func(js.Value)) DomBinding {
 	return DomBinding{
 		event,
@@ -85,6 +100,7 @@ func generateBinding(event string, value *any, callbacks ...func(js.Value)) DomB
 	}
 }
 
+// Applies all the bindings to the DOM elements concerned.
 func setBindings() {
 	for id := range bindings {
 		elem := document.Call(dom.JS_GET_ELEMENT_BY_ID, id)
@@ -97,10 +113,12 @@ func setBindings() {
 	}
 }
 
+// Deletes all the DomBindings stored locally.
 func unsetBindings() {
 	bindings = make(map[string][]DomBinding)
 }
 
+// Checks if one or more variables in the store have been changed.
 func detectHasChanged(variables ...*any) bool {
 	for i := range variables {
 		for key := range store {
@@ -112,6 +130,7 @@ func detectHasChanged(variables ...*any) bool {
 	return false
 }
 
+// Reset to zero of all the changes of each variable stored in the store.
 func clearHasChange() {
 	for k := range store {
 		if store[k].hasChanged {
@@ -120,6 +139,10 @@ func clearHasChange() {
 	}
 }
 
+// Starts the library's renderer. Allows to re-trigger the renderings when the
+// state changes (with a UseSate variable for example), through the state channel.
+// Must take a lambda function func() containing the call to Html() as parameter
+// to execute a rendering context.
 func Render(context func()) {
 	updateState()
 	for {
@@ -131,12 +154,19 @@ func Render(context func()) {
 	}
 }
 
+// Called to trigger in parallel a message sending in the chan state and consequently
+// request the new rendering of the application.
 func updateState() {
 	go func() {
 		state <- true
 	}()
 }
 
+// Returns a stateful value, and a function to update it.
+// During the initial render, the returned state (state) is the same as the value
+// passed as the first argument (initialState).
+// The setState function is used to update the state. It accepts a new state value
+// and enqueues a re-render of the DOM.
 func UseState(initialValue any) (actualValue *any, f func(setterValue any)) {
 	_, file, no, _ := runtime.Caller(1)
 	key := utils.CallerToKey(file, no)
@@ -148,12 +178,17 @@ func UseState(initialValue any) (actualValue *any, f func(setterValue any)) {
 	}
 }
 
+// Accepts a function that contains imperative, possibly effectful code.
+// The default behavior for effects is to fire the effect after every completed render.
+// That way an effect is always recreated if one of its variables changes (in variadics params).
 func UseEffect(callback func(), variables ...*any) {
 	if len(variables) == 0 || detectHasChanged(variables...) {
 		callback()
 	}
 }
 
+// Pass an inline callback and an array of dependencies. useCallback will return a memoized
+// version of the callback that only changes if one of the dependencies has changed.
 func UseCallback(callback func(...any) any, variables ...*any) *func(...any) any {
 	_, file, no, _ := runtime.Caller(1)
 	key := utils.CallerToKey(file, no)
@@ -164,6 +199,9 @@ func UseCallback(callback func(...any) any, variables ...*any) *func(...any) any
 	return storeCallback[key]
 }
 
+// Pass a “create” function and an array of dependencies. useMemo will only recompute the memoized
+// value when one of the dependencies has changed. This optimization helps to avoid expensive
+// calculations on every render.
 func UseMemo(callback func() any, variables ...*any) any {
 	_, file, no, _ := runtime.Caller(1)
 	key := utils.CallerToKey(file, no)
@@ -176,6 +214,8 @@ func UseMemo(callback func() any, variables ...*any) any {
 
 // Generate code for the DOM
 
+// Fires again if one of the insiders has a dom.ELEMENT_PARAM anchor, to hook
+// the parameter as an attribute of the HTML element passed to the DOM.
 func insertDomComponentParams(opener string, insiders ...DomComponent) (string, []DomComponent) {
 	var insidersWithoutParam []DomComponent
 	for _, insider := range insiders {
@@ -189,6 +229,7 @@ func insertDomComponentParams(opener string, insiders ...DomComponent) (string, 
 	return opener, insidersWithoutParam
 }
 
+// Returns the html rendering of the DomElement reproduced recursively with all its DomElements insiders
 func htmlDomComponent(opener string, closer string, insiders ...DomComponent) DomComponent {
 	if len(insiders) > 0 {
 		htmlStr, insiders := insertDomComponentParams(opener, insiders...)
@@ -201,6 +242,7 @@ func htmlDomComponent(opener string, closer string, insiders ...DomComponent) Do
 	return func() string { return fmt.Sprintf("%s%s", opener, closer) }
 }
 
+// Same function as htmlDomComponent() but only if the condition in parameter is valid.
 func If(condition bool, insiders ...DomComponent) DomComponent {
 	if condition {
 		htmlStr := ""
@@ -212,6 +254,8 @@ func If(condition bool, insiders ...DomComponent) DomComponent {
 	return func() string { return "" }
 }
 
+// Same operation as htmlDomComponent() but applies the function passed in parameter for the
+// whole array. The "key" element is used to make the link with the elements within the function.
 func For(elements []any, keyDomComponent func(i int) DomComponent) DomComponent {
 	if len(elements) > 0 {
 		htmlStr := ""
@@ -225,114 +269,137 @@ func For(elements []any, keyDomComponent func(i int) DomComponent) DomComponent 
 
 // DomComponents
 
+// Declare an html element with the <div> tag.
 func Div(insiders ...DomComponent) DomComponent {
 	return htmlDomComponent(dom.HTML_DIV_OPENER, dom.HTML_DIV_CLOSER, insiders...)
 }
 
+// Declare an html element with the <p> tag.
 func P[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
 	textStr := AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_P_OPENER, textStr), dom.HTML_P_CLOSER, insiders...)
 }
 
+// Declare an html element with the <span> tag.
 func Span[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
 	textStr := AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_SPAN_OPENER, textStr), dom.HTML_SPAN_CLOSER, insiders...)
 }
 
+// Declare an html element with the <ul> tag.
 func Ul(insiders ...DomComponent) DomComponent {
 	return htmlDomComponent(dom.HTML_UL_OPENER, dom.HTML_UL_CLOSER, insiders...)
 }
 
+// Declare an html element with the <li> tag.
 func Li(insiders ...DomComponent) DomComponent {
 	return htmlDomComponent(dom.HTML_LI_OPENER, dom.HTML_LI_CLOSER, insiders...)
 }
 
+// Declare an html element with the <table> tag.
 func Table(insiders ...DomComponent) DomComponent {
 	return htmlDomComponent(dom.HTML_TABLE_OPENER, dom.HTML_TABLE_CLOSER, insiders...)
 }
 
+// Declare an html element with the <tr> tag.
 func Tr(insiders ...DomComponent) DomComponent {
 	return htmlDomComponent(dom.HTML_TR_OPENER, dom.HTML_TR_CLOSER, insiders...)
 }
 
+// Declare an html element with the <th> tag.
 func Th(insiders ...DomComponent) DomComponent {
 	return htmlDomComponent(dom.HTML_TH_OPENER, dom.HTML_TH_CLOSER, insiders...)
 }
 
+// Declare an html element with the <td> tag.
 func Td(insiders ...DomComponent) DomComponent {
 	return htmlDomComponent(dom.HTML_TD_OPENER, dom.HTML_TD_CLOSER, insiders...)
 }
 
+// Declare an html element with the <h1> tag.
 func H1[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
 	textStr := AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_H1_OPENER, textStr), dom.HTML_H1_CLOSER, insiders...)
 }
 
+// Declare an html element with the <h2> tag.
 func H2[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
 	textStr := AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_H2_OPENER, textStr), dom.HTML_H2_CLOSER, insiders...)
 }
 
+// Declare an html element with the <h3> tag.
 func H3[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
 	textStr := AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_H3_OPENER, textStr), dom.HTML_H3_CLOSER, insiders...)
 }
 
+// Declare an html element with the <h4> tag.
 func H4[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
 	textStr := AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_H4_OPENER, textStr), dom.HTML_H4_CLOSER, insiders...)
 }
 
+// Declare an html element with the <a> tag.
 func A[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
 	textStr := AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_A_OPENER, textStr), dom.HTML_A_CLOSER, insiders...)
 }
 
+// Declare an html element with the <form> tag.
 func Form(insiders ...DomComponent) DomComponent {
 	return htmlDomComponent(dom.HTML_FORM_OPENER, dom.HTML_FORM_CLOSER, insiders...)
 }
 
+// Declare an html element with the <textarea> tag.
 func TextArea(insiders ...DomComponent) DomComponent {
 	return htmlDomComponent(dom.HTML_TEXTAREA_OPENER, dom.HTML_TEXTAREA_CLOSER, insiders...)
 }
 
+// Declare an html element with the <select> tag.
 func Select(insiders ...DomComponent) DomComponent {
 	return htmlDomComponent(dom.HTML_SELECT_OPENER, dom.HTML_SELECT_CLOSER, insiders...)
 }
 
+// Declare an html element with the <option> tag.
 func Option[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
 	textStr := AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_OPTION_OPENER, textStr), dom.HTML_OPTION_CLOSER, insiders...)
 }
 
+// Declare an html element with the <input> tag.
 func Input(insiders ...DomComponent) DomComponent {
 	return htmlDomComponent(dom.HTML_INPUT_OPENER, "", insiders...)
 }
 
+// Declare an html element with the <button> tag.
 func Button[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
 	textStr := AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_BUTTON_OPENER, textStr), dom.HTML_BUTTON_CLOSER, insiders...)
 }
 
+// Declare an html element with the <img> tag.
 func Img(insiders ...DomComponent) DomComponent {
 	return htmlDomComponent(dom.HTML_IMG_OPENER, "", insiders...)
 }
 
+// Declare an html element with the <br> tag.
 func Br() DomComponent {
 	return htmlDomComponent(dom.HTML_BR_OPENER, "")
 }
 
 // DomComponentsParams
 
+// Declare an attribute of an html element with the value 'class='
 func ClassName(className string) DomComponent {
 	sanitizeHtml(&className)
 	return func() string {
@@ -340,36 +407,43 @@ func ClassName(className string) DomComponent {
 	}
 }
 
+// Declare an attribute of an html element with the value 'style='
 func Style(style string) DomComponent {
 	sanitizeHtml(&style)
 	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_STYLE, style) }
 }
 
+// Declare an attribute of an html element with the value 'href='
 func Href(href string) DomComponent {
 	sanitizeHtml(&href)
 	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_HREF, href) }
 }
 
+// Declare an attribute of an html element with the value 'src='
 func Src(src string) DomComponent {
 	sanitizeHtml(&src)
 	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_SRC, src) }
 }
 
+// Declare an attribute of an html element with the value 'value='
 func Value(value string) DomComponent {
 	sanitizeHtml(&value)
 	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_VALUE, value) }
 }
 
+// Declare an attribute of an html element with the value 'id='
 func Id(id string) DomComponent {
 	sanitizeHtml(&id)
 	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_TYPE, id) }
 }
 
+// Declare an attribute of an html element with the value 'type='
 func Type(_type string) DomComponent {
 	sanitizeHtml(&_type)
 	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_TYPE, _type) }
 }
 
+// Declare an attribute of an html element with the value 'placeholder='
 func Placeholder(placeholder string) DomComponent {
 	sanitizeHtml(&placeholder)
 	return func() string {
@@ -377,6 +451,7 @@ func Placeholder(placeholder string) DomComponent {
 	}
 }
 
+// Declare an attribute of an html element with the value 'title='
 func Title(title string) DomComponent {
 	sanitizeHtml(&title)
 	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_TITLE, title) }
@@ -384,7 +459,9 @@ func Title(title string) DomComponent {
 
 // DomComponentsParamsStructure
 
-func FlexLayout[T string | int | int32 | int64 | float32 | float64](flow string, justify string, align string, gap T) DomComponent {
+// Declare une configuration CSS dans l'attribut d'un element html avec la valeur 'style=',
+// de manière a paramettrer un 'display: flex'
+func FlexLayout[T string | int](flow string, justify string, align string, gap T) DomComponent {
 	gapStr := AnyStr(gap)
 	sanitizeHtml(&flow)
 	sanitizeHtml(&justify)
@@ -395,7 +472,9 @@ func FlexLayout[T string | int | int32 | int64 | float32 | float64](flow string,
 	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_STYLE, layout) }
 }
 
-func GridLayout[T string | int | int32 | int64 | float32 | float64](columns T, rows T, gap string) DomComponent {
+// Declare une configuration CSS dans l'attribut d'un element html avec la valeur 'style=',
+// de manière a paramettrer un 'display: grid'
+func GridLayout[T string | int](columns T, rows T, gap string) DomComponent {
 	columnsStr := AnyStr(columns)
 	rowsStr := AnyStr(rows)
 	sanitizeHtml(&columnsStr)
@@ -409,12 +488,16 @@ func GridLayout[T string | int | int32 | int64 | float32 | float64](columns T, r
 
 // DomComponentsParamsBinding
 
+// Declare a binding on the event 'click' on the attached element to trigger
+// the function passed in parameter.
 func OnClick(callbacks ...func(js.Value)) DomComponent {
 	id := utils.GenerateShortId()
 	bindings[id] = append(bindings[id], generateBinding(dom.JS_EVENT_CLICK, nil, callbacks...))
 	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_ID, id) }
 }
 
+// Declare a binding on the event 'change' on the attached element to trigger
+// the function passed in parameter.
 func OnChange(value *any, callbacks ...func(js.Value)) DomComponent {
 	id := utils.GenerateShortId()
 	bindings[id] = append(bindings[id], generateBinding(dom.JS_EVENT_CHANGE, value, callbacks...))
@@ -424,20 +507,24 @@ func OnChange(value *any, callbacks ...func(js.Value)) DomComponent {
 
 // External utils
 
+// Convert 'any' type to 'string'.
 func AnyStr(v any) string {
 	return fmt.Sprintf("%v", v)
 }
 
+// Convert 'any' type to 'int'.
 func AnyInt(v any) int {
 	x, _ := strconv.Atoi(fmt.Sprintf("%v", v))
 	return x
 }
 
+// Convert 'any' type to 'float'.
 func AnyFlt(v any) float64 {
 	x, _ := strconv.ParseFloat(fmt.Sprintf("%v", v), 64)
 	return x
 }
 
+// Convert 'any' type to 'bool'.
 func AnyBol(v any) bool {
 	x, _ := strconv.ParseBool(fmt.Sprintf("%v", v))
 	return x
