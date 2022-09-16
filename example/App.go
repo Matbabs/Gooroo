@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"syscall/js"
 
 	o "github.com/Matbabs/Gooroo"
@@ -19,20 +18,14 @@ func App() o.DomComponent {
 	o.Css("")
 
 	name, _ := o.UseState("")
-	age, _ := o.UseState("42")
-	_bool, _ := o.UseState("FALSE")
-	_flt, _ := o.UseState("0.3")
+	age, _ := o.UseState(42)
+	_bool, _ := o.UseState(false)
+	_flt, _ := o.UseState(0.3)
 	p, setP := o.UseState(Person{})
 
 	handleSubmit := func(e js.Value) {
-		setP(Person{o.AnyStr(*name), o.AnyInt(*age), o.AnyBol(*_bool), o.AnyFlt(*_flt)})
+		setP(Person{(*name).(string), (*age).(int), (*_bool).(bool), (*_flt).(float64)})
 	}
-
-	handleMemo := o.UseMemo(func() any {
-		return nil
-	}, name)
-
-	fmt.Println(handleMemo)
 
 	return o.Div(o.Style("margin: auto; padding: 100px; width: 800px"),
 		o.H1("Tuto BreizhC@mp web front Go ! v0.0.2"),

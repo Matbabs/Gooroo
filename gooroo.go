@@ -9,7 +9,6 @@ package gooroo
 import (
 	"fmt"
 	"runtime"
-	"strconv"
 	"strings"
 	"syscall/js"
 
@@ -18,31 +17,45 @@ import (
 )
 
 // DomComponent represents an element of the DOM. This element can be a tag, an attribute,
-// a layout or even a binding. Most DomElements can be nested within each other thanks to
+// a layout or even a binding. Most DomComponents can be nested within each other thanks to
 // variadic parameters.
 type DomComponent func() string
 
 // DomBinding is a structure that allows to retain the link between an event, a callback function
 // and a potential value to update when the event is triggered.
 // All binding is reapplied during rendering.
-type DomBinding struct {
+type domBinding struct {
 	event    string
 	callback js.Func
 	value    *any
 }
 
 // DomStore allows to keep the state of change of a value in the store.
-type DomStore struct {
+type domStore struct {
 	value      any
 	hasChanged bool
 }
 
+// Represents the global variable "document" of a website, useful for DOM manipulation and some
+// JavaScript interraction.
 var document js.Value = js.Global().Get(dom.HTML_DOCUMENT)
+
+// List of paths to add CSS style sheets already imported into the website.
 var stylesheets = []string{}
+
+// Communication channel that generates a new rendering for each message sent within it.
 var state = make(chan bool)
-var bindings = make(map[string][]DomBinding)
-var store = make(map[string]*DomStore)
+
+// List of DomBindings registered for the application rendering.
+var bindings = make(map[string][]domBinding)
+
+// Store of local variables recorded in the application state.
+var store = make(map[string]*domStore)
+
+// Store of memoized variables.
 var storeMemo = make(map[string]any)
+
+// Store of memoized functions.
 var storeCallback = make(map[string]*func(...any) any)
 
 // Manipulate DOM
@@ -58,7 +71,7 @@ func Css(filepath string) {
 	}
 }
 
-// Triggers a rendering of the DOM, of all the DomElements declared in parameters.
+// Triggers a rendering of the DOM, of all the DomComponents declared in parameters.
 func Html(domComponents ...DomComponent) {
 	for i := range domComponents {
 		elem := document.Call(dom.JS_CREATE_ELEMENT, dom.HTML_DIV)
@@ -75,19 +88,19 @@ func sanitizeHtml(htmlStr *string) {
 	*htmlStr = tmp.Get(dom.JS_TEXT_CONTENT).String()
 }
 
-// Removes the whole rendering from the DOM, including the DomElements passed as parameters
+// Removes the whole rendering from the DOM, including the DomComponents passed as parameters
 // in the Html() function.
 func clearContext() {
 	document.Get(dom.HTML_BODY).Set(dom.JS_INNER_HTML, "")
 }
 
 // Create a functional DomBinding set on its parameters.
-func generateBinding(event string, value *any, callbacks ...func(js.Value)) DomBinding {
-	return DomBinding{
+func generateBinding(event string, value *any, callbacks ...func(js.Value)) domBinding {
+	return domBinding{
 		event,
 		js.FuncOf(
 			func(this js.Value, args []js.Value) any {
-				if event == dom.JS_EVENT_CHANGE {
+				if event == dom.JS_EVENT_KEYUP || event == dom.JS_EVENT_CHANGE {
 					*value = args[0].Get(dom.JS_TARGET).Get(dom.JS_VALUE).String()
 				}
 				for i := range callbacks {
@@ -115,7 +128,7 @@ func setBindings() {
 
 // Deletes all the DomBindings stored locally.
 func unsetBindings() {
-	bindings = make(map[string][]DomBinding)
+	bindings = make(map[string][]domBinding)
 }
 
 // Checks if one or more variables in the store have been changed.
@@ -170,7 +183,7 @@ func updateState() {
 func UseState(initialValue any) (actualValue *any, f func(setterValue any)) {
 	_, file, no, _ := runtime.Caller(1)
 	key := utils.CallerToKey(file, no)
-	utils.MapInit(key, store, &DomStore{initialValue, false})
+	utils.MapInit(key, store, &domStore{initialValue, false})
 	return &store[key].value, func(setVal any) {
 		store[key].value = setVal
 		store[key].hasChanged = true
@@ -229,7 +242,7 @@ func insertDomComponentParams(opener string, insiders ...DomComponent) (string, 
 	return opener, insidersWithoutParam
 }
 
-// Returns the html rendering of the DomElement reproduced recursively with all its DomElements insiders
+// Returns the html rendering of the DomComponent reproduced recursively with all its DomComponents insiders
 func htmlDomComponent(opener string, closer string, insiders ...DomComponent) DomComponent {
 	if len(insiders) > 0 {
 		htmlStr, insiders := insertDomComponentParams(opener, insiders...)
@@ -256,7 +269,7 @@ func If(condition bool, insiders ...DomComponent) DomComponent {
 
 // Same operation as htmlDomComponent() but applies the function passed in parameter for the
 // whole array. The "key" element is used to make the link with the elements within the function.
-func For(elements []any, keyDomComponent func(i int) DomComponent) DomComponent {
+func For[T string | int | int32 | int64 | float32 | float64 | bool | any](elements []T, keyDomComponent func(i int) DomComponent) DomComponent {
 	if len(elements) > 0 {
 		htmlStr := ""
 		for i := range elements {
@@ -275,15 +288,15 @@ func Div(insiders ...DomComponent) DomComponent {
 }
 
 // Declare an html element with the <p> tag.
-func P[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
-	textStr := AnyStr(text)
+func P[T string | int | int32 | int64 | float32 | float64 | bool](text T, insiders ...DomComponent) DomComponent {
+	textStr := utils.AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_P_OPENER, textStr), dom.HTML_P_CLOSER, insiders...)
 }
 
 // Declare an html element with the <span> tag.
-func Span[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
-	textStr := AnyStr(text)
+func Span[T string | int | int32 | int64 | float32 | float64 | bool](text T, insiders ...DomComponent) DomComponent {
+	textStr := utils.AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_SPAN_OPENER, textStr), dom.HTML_SPAN_CLOSER, insiders...)
 }
@@ -319,36 +332,36 @@ func Td(insiders ...DomComponent) DomComponent {
 }
 
 // Declare an html element with the <h1> tag.
-func H1[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
-	textStr := AnyStr(text)
+func H1[T string | int | int32 | int64 | float32 | float64 | bool](text T, insiders ...DomComponent) DomComponent {
+	textStr := utils.AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_H1_OPENER, textStr), dom.HTML_H1_CLOSER, insiders...)
 }
 
 // Declare an html element with the <h2> tag.
-func H2[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
-	textStr := AnyStr(text)
+func H2[T string | int | int32 | int64 | float32 | float64 | bool](text T, insiders ...DomComponent) DomComponent {
+	textStr := utils.AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_H2_OPENER, textStr), dom.HTML_H2_CLOSER, insiders...)
 }
 
 // Declare an html element with the <h3> tag.
-func H3[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
-	textStr := AnyStr(text)
+func H3[T string | int | int32 | int64 | float32 | float64 | bool](text T, insiders ...DomComponent) DomComponent {
+	textStr := utils.AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_H3_OPENER, textStr), dom.HTML_H3_CLOSER, insiders...)
 }
 
 // Declare an html element with the <h4> tag.
-func H4[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
-	textStr := AnyStr(text)
+func H4[T string | int | int32 | int64 | float32 | float64 | bool](text T, insiders ...DomComponent) DomComponent {
+	textStr := utils.AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_H4_OPENER, textStr), dom.HTML_H4_CLOSER, insiders...)
 }
 
 // Declare an html element with the <a> tag.
-func A[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
-	textStr := AnyStr(text)
+func A[T string | int | int32 | int64 | float32 | float64 | bool](text T, insiders ...DomComponent) DomComponent {
+	textStr := utils.AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_A_OPENER, textStr), dom.HTML_A_CLOSER, insiders...)
 }
@@ -369,8 +382,8 @@ func Select(insiders ...DomComponent) DomComponent {
 }
 
 // Declare an html element with the <option> tag.
-func Option[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
-	textStr := AnyStr(text)
+func Option[T string | int | int32 | int64 | float32 | float64 | bool](text T, insiders ...DomComponent) DomComponent {
+	textStr := utils.AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_OPTION_OPENER, textStr), dom.HTML_OPTION_CLOSER, insiders...)
 }
@@ -381,8 +394,8 @@ func Input(insiders ...DomComponent) DomComponent {
 }
 
 // Declare an html element with the <button> tag.
-func Button[T string | int | int32 | int64 | float32 | float64](text T, insiders ...DomComponent) DomComponent {
-	textStr := AnyStr(text)
+func Button[T string | int | int32 | int64 | float32 | float64 | bool](text T, insiders ...DomComponent) DomComponent {
+	textStr := utils.AnyStr(text)
 	sanitizeHtml(&textStr)
 	return htmlDomComponent(fmt.Sprintf("%s%s", dom.HTML_BUTTON_OPENER, textStr), dom.HTML_BUTTON_CLOSER, insiders...)
 }
@@ -462,7 +475,7 @@ func Title(title string) DomComponent {
 // Declare une configuration CSS dans l'attribut d'un element html avec la valeur 'style=',
 // de manière a paramettrer un 'display: flex'
 func FlexLayout[T string | int](flow string, justify string, align string, gap T) DomComponent {
-	gapStr := AnyStr(gap)
+	gapStr := utils.AnyStr(gap)
 	sanitizeHtml(&flow)
 	sanitizeHtml(&justify)
 	sanitizeHtml(&align)
@@ -475,8 +488,8 @@ func FlexLayout[T string | int](flow string, justify string, align string, gap T
 // Declare une configuration CSS dans l'attribut d'un element html avec la valeur 'style=',
 // de manière a paramettrer un 'display: grid'
 func GridLayout[T string | int](columns T, rows T, gap string) DomComponent {
-	columnsStr := AnyStr(columns)
-	rowsStr := AnyStr(rows)
+	columnsStr := utils.AnyStr(columns)
+	rowsStr := utils.AnyStr(rows)
 	sanitizeHtml(&columnsStr)
 	sanitizeHtml(&rowsStr)
 	sanitizeHtml(&gap)
@@ -503,29 +516,4 @@ func OnChange(value *any, callbacks ...func(js.Value)) DomComponent {
 	bindings[id] = append(bindings[id], generateBinding(dom.JS_EVENT_CHANGE, value, callbacks...))
 	bindings[id] = append(bindings[id], generateBinding(dom.JS_EVENT_KEYUP, value, callbacks...))
 	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_ID, id) }
-}
-
-// External utils
-
-// Convert 'any' type to 'string'.
-func AnyStr(v any) string {
-	return fmt.Sprintf("%v", v)
-}
-
-// Convert 'any' type to 'int'.
-func AnyInt(v any) int {
-	x, _ := strconv.Atoi(fmt.Sprintf("%v", v))
-	return x
-}
-
-// Convert 'any' type to 'float'.
-func AnyFlt(v any) float64 {
-	x, _ := strconv.ParseFloat(fmt.Sprintf("%v", v), 64)
-	return x
-}
-
-// Convert 'any' type to 'bool'.
-func AnyBol(v any) bool {
-	x, _ := strconv.ParseBool(fmt.Sprintf("%v", v))
-	return x
 }

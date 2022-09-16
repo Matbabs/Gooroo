@@ -42,3 +42,8 @@ func MapInitCallback[T any](key string, _map map[string]T, callback func() T) {
 func CallerToKey(file string, no int) string {
 	return fmt.Sprintf("%s#%d", file, no)
 }
+
+// Convert 'any' type to 'string'.
+func AnyStr(v any) string {
+	return fmt.Sprintf("%v", v)
+}
