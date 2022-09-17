@@ -17,6 +17,7 @@ javascript independent web library.
 
 ## Html with variadics - DomComponent
 
+### Main App Component
 ```go
 import (
 	o "github.com/Matbabs/Gooroo"
@@ -44,6 +45,71 @@ It is a function that returns a DomComponent.
 Most of the DomComponents can have a set of children (as in classical HTML), thanks to the variadic parameter passing.
 
 > example of DomComponent: `o.H1`, `o.P`, `o.Span`, `o.Table`, `o.Form`, `o.Input`, `o.Button` ...
+
+### Integration with your own components
+
+```go
+func App() o.DomComponent {
+
+	p := "This is a prop"
+
+	return o.Div(
+		o.H1("Hello World !"),
+		o.Div(
+			o.P("This is a paragraph ..."),
+			component.OtherComponent(p),
+		),
+	)
+}
+```
+app.go
+
+```go
+func OtherComponent(prop string) o.DomComponent {
+
+	return o.Div(
+		o.H1("An other Component !"),
+		o.P("This is another paragraph"),
+		o.Span(prop),
+	)
+}
+```
+other.go
+
+As in most frontend libraries, Gooroo implements a component system that you can integrate with each other.
+
+> Also observe the way in which one or more `props` can be propagated.
+
+### Addition of a CSS style sheet
+
+```css
+* {
+    color: crimson
+}
+```
+master.css
+
+```go
+func App() o.DomComponent {
+
+	o.Css("master.css")
+
+	return o.Div(
+		o.H1("Hello World !"),
+		o.Div(
+			o.P("This is a paragraph ..."),
+			o.Ul(
+				o.Li(o.Span("Item 1")),
+				o.Li(o.Span("Item 2")),
+				o.Li(o.Span("Item 3")),
+			),
+		),
+	)
+}
+```
+app.go
+
+You can use `o.Css()` to integrate your CSS codes.
 
 ## Conditions & Loops
 
