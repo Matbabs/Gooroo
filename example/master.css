@@ -1,16 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap");
 
-*, ::before, ::after {
-    box-sizing: border-box;
-    font-family: 'JetBrains Mono', monospace;
+*,
+::before,
+::after {
+  box-sizing: border-box;
+  font-family: "JetBrains Mono", monospace;
 }
 
-html, body {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
-input, button, select {
-    padding: 8px;
+input,
+button,
+select {
+  padding: 8px;
 }
