@@ -8,7 +8,7 @@
 ## Why Gooroo ?
 
 The Gooroo library gathers a set of cumulative functions allowing you
-to create web applications on the Frontend side. To do this purpose, 
+to create web applications on the Frontend side. To do this purpose,
 it implements DOM manipulation features based on syscall/js and webassembly.
 Its objective is to explore the possibilities of a modern, lightweight and
 javascript independent web library.
@@ -18,6 +18,7 @@ javascript independent web library.
 ## Html with variadics - DomComponent
 
 ### Main App Component
+
 ```go
 import (
 	o "github.com/Matbabs/Gooroo"
@@ -39,7 +40,7 @@ func App() o.DomComponent {
 }
 ```
 
-Here you can see the main component of the application. 
+Here you can see the main component of the application.
 It is a function that returns a DomComponent.
 
 Most of the DomComponents can have a set of children (as in classical HTML), thanks to the variadic parameter passing.
@@ -62,6 +63,7 @@ func App() o.DomComponent {
 	)
 }
 ```
+
 app.go
 
 ```go
@@ -74,6 +76,7 @@ func OtherComponent(prop string) o.DomComponent {
 	)
 }
 ```
+
 other.go
 
 As in most frontend libraries, Gooroo implements a component system that you can integrate with each other.
@@ -84,9 +87,10 @@ As in most frontend libraries, Gooroo implements a component system that you can
 
 ```css
 * {
-    color: crimson
+  color: crimson;
 }
 ```
+
 master.css
 
 ```go
@@ -107,6 +111,7 @@ func App() o.DomComponent {
 	)
 }
 ```
+
 app.go
 
 You can use `o.Css()` to integrate your CSS codes.
@@ -171,17 +176,17 @@ func App() o.DomComponent {
 
 A set of HTML attributes can be hooked through DomComponent.
 
-Here is a non-exhaustive list: 
- * `o.ClassName`
- * `o.Style`
- * `o.Src`
- * `o.Href`
- * `o.Value`
- * `o.Id`
- * `o.Type`
- * `o.Placeholder`
- * `o.Title`
+Here is a non-exhaustive list:
 
+- `o.ClassName`
+- `o.Style`
+- `o.Src`
+- `o.Href`
+- `o.Value`
+- `o.Id`
+- `o.Type`
+- `o.Placeholder`
+- `o.Title`
 
 ### Binding Params
 
@@ -336,11 +341,12 @@ func App() o.DomComponent {
 }
 ```
 
-`o.UseEffect` allows to trigger a function when rendering the component. 
+`o.UseEffect` allows to trigger a function when rendering the component.
 
 > At each state change and thus new rendering, the o.UseEffect is triggered according to its dependency list:
-> * if no state variable, the call is always made
-> * if one or more variables, the call is made when one of them changes 
+>
+> - if no state variable, the call is always made
+> - if one or more variables, the call is made when one of them changes
 
 ### UseMemo - optimize expensive calculations
 
@@ -367,7 +373,7 @@ func App() o.DomComponent {
 }
 ```
 
-`o.UseMemo` is used for expensive computations, it allows to return a `memoized value`. In the same way as `o.UseEffect`, the calculation is triggered according to its dependency list.  
+`o.UseMemo` is used for expensive computations, it allows to return a `memoized value`. In the same way as `o.UseEffect`, the calculation is triggered according to its dependency list.
 
 ### UseCallback - optimize the creation of your lambda functions
 
@@ -394,4 +400,5 @@ func App() o.DomComponent {
 	)
 }
 ```
-`o.UseCallback` is used to avoid regenerating a lambda function, so it returns a pointer to a `memoized function`. In the same way as `o.UseEffect`, the regeneration is triggered according to its dependency list.  
+
+`o.UseCallback` is used to avoid regenerating a lambda function, so it returns a pointer to a `memoized function`. In the same way as `o.UseEffect`, the regeneration is triggered according to its dependency list.
