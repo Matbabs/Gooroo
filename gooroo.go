@@ -36,27 +36,29 @@ type domStore struct {
 	hasChanged bool
 }
 
-// Represents the global variable "document" of a website, useful for DOM manipulation and some
-// JavaScript interraction.
-var document js.Value = js.Global().Get(dom.HTML_DOCUMENT)
+var (
+	// Represents the global variable "document" of a website, useful for DOM manipulation and some
+	// JavaScript interraction.
+	document js.Value = js.Global().Get(dom.HTML_DOCUMENT)
 
-// List of paths to add CSS style sheets already imported into the website.
-var stylesheets = []string{}
+	// List of paths to add CSS style sheets already imported into the website.
+	stylesheets = []string{}
 
-// Communication channel that generates a new rendering for each message sent within it.
-var state = make(chan bool)
+	// Communication channel that generates a new rendering for each message sent within it.
+	state = make(chan bool)
 
-// List of DomBindings registered for the application rendering.
-var bindings = make(map[string][]domBinding)
+	// List of DomBindings registered for the application rendering.
+	bindings = make(map[string][]domBinding)
 
-// Store of local variables recorded in the application state.
-var store = make(map[string]*domStore)
+	// Store of local variables recorded in the application state.
+	store = make(map[string]*domStore)
 
-// Store of memoized variables.
-var storeMemo = make(map[string]any)
+	// Store of memoized variables.
+	storeMemo = make(map[string]any)
 
-// Store of memoized functions.
-var storeCallback = make(map[string]*func(...any) any)
+	// Store of memoized functions.
+	storeCallback = make(map[string]*func(...any) any)
+)
 
 // Manipulate DOM
 

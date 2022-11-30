@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"strconv"
 	"syscall/js"
 
 	o "github.com/Matbabs/Gooroo"
@@ -23,8 +25,10 @@ func App() o.DomComponent {
 	_flt, _ := o.UseState(0.3)
 	p, setP := o.UseState(Person{})
 
-	handleSubmit := func(e js.Value) {
-		setP(Person{(*name).(string), (*age).(int), (*_bool).(bool), (*_flt).(float64)})
+	handleSubmit := func(_ js.Value) {
+		age_i, _ := strconv.Atoi((*age).(string))
+		setP(Person{(*name).(string), age_i, (*_bool).(bool), (*_flt).(float64)})
+		fmt.Println((*p).(Person))
 	}
 
 	return o.Div(o.Style("margin: auto; padding: 100px; width: 800px"),
@@ -38,7 +42,7 @@ func App() o.DomComponent {
 			o.Input(o.OnChange(age), o.Type("number")),
 			o.Button("Click", o.OnClick(handleSubmit), o.Title("")),
 			o.If(*age != nil,
-				o.P((*p).(Person).age),
+				o.P((*p).(Person).name),
 			),
 		),
 	)
