@@ -80,7 +80,6 @@ func Html(domComponents ...DomComponent) {
 		document.Get(dom.HTML_BODY).Call(dom.JS_APPEND_CHILD, elem)
 		elem.Set(dom.JS_INNER_HTML, domComponents[i]())
 	}
-	setBindings()
 }
 
 // Clean the content of a string to prevent injections related to innerHtml attributes.
@@ -102,6 +101,7 @@ func generateBinding(event string, value *any, callbacks ...func(js.Value)) domB
 		event,
 		js.FuncOf(
 			func(this js.Value, args []js.Value) any {
+				// change value when event is emitted
 				if event == dom.JS_EVENT_KEYUP || event == dom.JS_EVENT_CHANGE {
 					*value = args[0].Get(dom.JS_TARGET).Get(dom.JS_VALUE).String()
 				}
@@ -120,7 +120,9 @@ func setBindings() {
 	for id := range bindings {
 		elem := document.Call(dom.JS_GET_ELEMENT_BY_ID, id)
 		for i := range bindings[id] {
+			// add event listener
 			elem.Call(dom.JS_ADD_EVENT_LISTENER, bindings[id][i].event, bindings[id][i].callback)
+			// add actual value if defined
 			if bindings[id][i].event == dom.JS_EVENT_CHANGE {
 				elem.Set(dom.JS_VALUE, *(bindings[id][i].value))
 			}
@@ -163,9 +165,10 @@ func Render(context func()) {
 	for {
 		<-state
 		clearContext()
+		clearHasChange()
 		unsetBindings()
 		context()
-		clearHasChange()
+		setBindings()
 	}
 }
 
@@ -271,7 +274,7 @@ func If(condition bool, insiders ...DomComponent) DomComponent {
 
 // Same operation as htmlDomComponent() but applies the function passed in parameter for the
 // whole array. The "key" element is used to make the link with the elements within the function.
-func For[T string | int | int32 | int64 | float32 | float64 | bool | any](elements []T, keyDomComponent func(i int) DomComponent) DomComponent {
+func For[T string | int | int32 | int64 | float32 | float64 | bool | any](elements []T, keyDomComponent func(_ int) DomComponent) DomComponent {
 	if len(elements) > 0 {
 		htmlStr := ""
 		for i := range elements {

@@ -5,7 +5,7 @@ tmp_dir = "tmp"
 [build]
   args_bin = []
   bin = "/bin/echo 'Gooroo ready !'"
-  cmd = "GOOS=js GOARCH=wasm go build -o ./main.wasm"
+  cmd = "cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" . && GOOS=js GOARCH=wasm go build -o ./main.wasm"
   delay = 0
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
   exclude_file = []

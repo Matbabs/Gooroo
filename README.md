@@ -402,3 +402,39 @@ func App() o.DomComponent {
 ```
 
 `o.UseCallback` is used to avoid regenerating a lambda function, so it returns a pointer to a `memoized function`. In the same way as `o.UseEffect`, the regeneration is triggered according to its dependency list.
+
+
+## Install
+
+### Get "wasm_exec.js" for Golang Web Assembly
+
+`cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" .`
+
+### Build Golang Web Assembly Project
+
+`GOOS=js GOARCH=wasm go build -o ./main.wasm`
+
+### Run HTML with Golang Web Assembly
+
+```html
+<html>
+  <head>
+    <title>Example Gooroo</title>
+    <link rel="icon" type="image/x-icon" href="./favicon.ico" />
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="master.css" />
+    <script src="wasm_exec.js"></script>
+    <script>
+      const go = new Go();
+      WebAssembly.instantiateStreaming(
+        fetch("main.wasm"),
+        go.importObject
+      ).then((result) => {
+        go.run(result.instance);
+      });
+    </script>
+  </head>
+  <body></body>
+</html>
+
+```
