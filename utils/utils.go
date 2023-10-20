@@ -3,8 +3,7 @@ package utils
 
 import (
 	"fmt"
-
-	"github.com/lithammer/shortuuid"
+	"strings"
 )
 
 // Check for the presence of a 'string' in a '[]string'.
@@ -15,11 +14,6 @@ func Contains(s []string, str string) bool {
 		}
 	}
 	return false
-}
-
-// Generates a uuid.
-func GenerateShortId() string {
-	return shortuuid.New()
 }
 
 // Initializes a value in a map if and only if it does not exist.
@@ -40,7 +34,8 @@ func MapInitCallback[T any](key string, _map map[string]T, callback func() T) {
 
 // Formatting a string for key management
 func CallerToKey(file string, no int) string {
-	return fmt.Sprintf("%s#%d", file, no)
+	splitFile := strings.Split(file, "/")
+	return fmt.Sprintf("%s#%d", splitFile[len(splitFile)-1], no)
 }
 
 // Convert 'any' type to 'string'.

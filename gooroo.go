@@ -50,6 +50,9 @@ var (
 	// List of DomBindings registered for the application rendering.
 	bindings = make(map[string][]domBinding)
 
+	// Store the last domComponent that have been focused
+	lastDomComponentFocused = ""
+
 	// Store of local variables recorded in the application state.
 	store = make(map[string]*domStore)
 
@@ -96,17 +99,25 @@ func clearContext() {
 }
 
 // Create a functional DomBinding set on its parameters.
-func generateBinding(event string, value *any, callbacks ...func(js.Value)) domBinding {
+func generateBinding(id string, event string, value *any, callbacks ...func(js.Value)) domBinding {
 	return domBinding{
 		event,
 		js.FuncOf(
-			func(this js.Value, args []js.Value) any {
-				// change value when event is emitted
-				if event == dom.JS_EVENT_KEYUP || event == dom.JS_EVENT_CHANGE {
-					*value = args[0].Get(dom.JS_TARGET).Get(dom.JS_VALUE).String()
+			func(_ js.Value, args []js.Value) any {
+				valueNeedToChanged := false
+				switch event {
+				case dom.JS_EVENT_KEYUP, dom.JS_EVENT_KEYDOWN, dom.JS_EVENT_CHANGE:
+					// change value when event is emitted
+					valueNeedToChanged = true
+				case dom.JS_EVENT_FOCUS:
+					// set last focused
+					lastDomComponentFocused = id
 				}
 				for i := range callbacks {
 					callbacks[i](args[0])
+				}
+				if valueNeedToChanged {
+					forceHasChanged(value, args[0].Get(dom.JS_TARGET).Get(dom.JS_VALUE).String())
 				}
 				return nil
 			},
@@ -118,13 +129,19 @@ func generateBinding(event string, value *any, callbacks ...func(js.Value)) domB
 // Applies all the bindings to the DOM elements concerned.
 func setBindings() {
 	for id := range bindings {
-		elem := document.Call(dom.JS_GET_ELEMENT_BY_ID, id)
+		elem := document.Call(dom.JS_GET_ELEMENT_BY_CLASSNAME, id).Index(0)
 		for i := range bindings[id] {
 			// add event listener
 			elem.Call(dom.JS_ADD_EVENT_LISTENER, bindings[id][i].event, bindings[id][i].callback)
-			// add actual value if defined
-			if bindings[id][i].event == dom.JS_EVENT_CHANGE {
+			switch bindings[id][i].event {
+			case dom.JS_EVENT_CHANGE:
+				// add actual value if defined in input
 				elem.Set(dom.JS_VALUE, *(bindings[id][i].value))
+			case dom.JS_EVENT_FOCUS:
+				// reset focus to input if last focused
+				if id == lastDomComponentFocused {
+					elem.Call(dom.JS_EVENT_FOCUS)
+				}
 			}
 		}
 	}
@@ -133,6 +150,17 @@ func setBindings() {
 // Deletes all the DomBindings stored locally.
 func unsetBindings() {
 	bindings = make(map[string][]domBinding)
+}
+
+// Change variable from store & updateState
+func forceHasChanged(variable *any, setVal any) {
+	for key := range store {
+		if variable == &store[key].value {
+			store[key].value = setVal
+			store[key].hasChanged = true
+			updateState()
+		}
+	}
 }
 
 // Checks if one or more variables in the store have been changed.
@@ -149,9 +177,9 @@ func detectHasChanged(variables ...*any) bool {
 
 // Reset to zero of all the changes of each variable stored in the store.
 func clearHasChange() {
-	for k := range store {
-		if store[k].hasChanged {
-			store[k].hasChanged = false
+	for key := range store {
+		if store[key].hasChanged {
+			store[key].hasChanged = false
 		}
 	}
 }
@@ -165,9 +193,9 @@ func Render(context func()) {
 	for {
 		<-state
 		clearContext()
-		clearHasChange()
 		unsetBindings()
 		context()
+		clearHasChange()
 		setBindings()
 	}
 }
@@ -190,9 +218,7 @@ func UseState(initialValue any) (actualValue *any, f func(setterValue any)) {
 	key := utils.CallerToKey(file, no)
 	utils.MapInit(key, store, &domStore{initialValue, false})
 	return &store[key].value, func(setVal any) {
-		store[key].value = setVal
-		store[key].hasChanged = true
-		updateState()
+		forceHasChanged(&store[key].value, setVal)
 	}
 }
 
@@ -509,16 +535,20 @@ func GridLayout[T string | int](columns T, rows T, gap string) DomComponent {
 // Declare a binding on the event 'click' on the attached element to trigger
 // the function passed in parameter.
 func OnClick(callbacks ...func(js.Value)) DomComponent {
-	id := utils.GenerateShortId()
-	bindings[id] = append(bindings[id], generateBinding(dom.JS_EVENT_CLICK, nil, callbacks...))
-	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_ID, id) }
+	_, file, no, _ := runtime.Caller(1)
+	key := utils.CallerToKey(file, no)
+	bindings[key] = append(bindings[key], generateBinding(key, dom.JS_EVENT_CLICK, nil, callbacks...))
+	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_CLASSNAME, key) }
 }
 
 // Declare a binding on the event 'change' on the attached element to trigger
 // the function passed in parameter.
 func OnChange(value *any, callbacks ...func(js.Value)) DomComponent {
-	id := utils.GenerateShortId()
-	bindings[id] = append(bindings[id], generateBinding(dom.JS_EVENT_CHANGE, value, callbacks...))
-	bindings[id] = append(bindings[id], generateBinding(dom.JS_EVENT_KEYUP, value, callbacks...))
-	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_ID, id) }
+	_, file, no, _ := runtime.Caller(1)
+	key := utils.CallerToKey(file, no)
+	bindings[key] = append(bindings[key], generateBinding(key, dom.JS_EVENT_CHANGE, value, callbacks...))
+	bindings[key] = append(bindings[key], generateBinding(key, dom.JS_EVENT_KEYUP, value, callbacks...))
+	bindings[key] = append(bindings[key], generateBinding(key, dom.JS_EVENT_KEYDOWN, value, callbacks...))
+	bindings[key] = append(bindings[key], generateBinding(key, dom.JS_EVENT_FOCUS, value, callbacks...))
+	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_CLASSNAME, key) }
 }

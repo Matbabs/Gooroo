@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"syscall/js"
 
 	o "github.com/Matbabs/Gooroo"
@@ -19,6 +20,10 @@ func App() o.DomComponent {
 	age, _ := o.UseState("42")
 	p, setP := o.UseState(Person{(*name).(string), (*age).(string)})
 
+	o.UseEffect(func() {
+		fmt.Println("When person changed !")
+	}, p)
+
 	arr := []string{"Cat", "Dog", "Bird"}
 
 	handleSubmit := func(_ js.Value) {
@@ -27,7 +32,7 @@ func App() o.DomComponent {
 
 	return o.Div(o.Style("margin: auto; padding: 100px; width: 800px"),
 		o.H1(
-			"Tuto Gooroo web front Go ! v0.0.8",
+			"Tuto Gooroo web front Go ! v0.1.8",
 			o.ClassName("title"),
 		),
 		o.H2("Form"),
@@ -39,12 +44,12 @@ func App() o.DomComponent {
 			o.Input(o.OnChange(age), o.Type("number")),
 			o.Button("Click", o.OnClick(handleSubmit), o.Title("")),
 		),
-		o.H2("Result"),
-		o.If(*p != nil,
-			o.P((*p).(Person).name),
-			o.P((*p).(Person).age),
-		),
-		o.H2("Animals"),
+		o.H2("From Store"),
+		o.P((*name).(string)),
+		o.P((*age).(string)),
+		o.H2("From State"),
+		o.P((*p).(Person).name+" "+(*p).(Person).age),
+		o.H2("For Animals"),
 		o.Div(
 			o.For(arr, func(i int) o.DomComponent {
 				return o.P(arr[i])
