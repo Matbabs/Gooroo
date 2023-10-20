@@ -27,7 +27,7 @@ func App() o.DomComponent {
 
 	return o.Div(o.Style("margin: auto; padding: 100px; width: 800px"),
 		o.H1(
-			"Tuto Gooroo web front Go ! v0.0.2",
+			"Tuto Gooroo web front Go ! v0.0.8",
 			o.ClassName("title"),
 		),
 		o.H2("Form"),
