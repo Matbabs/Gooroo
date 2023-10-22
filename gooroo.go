@@ -104,20 +104,24 @@ func generateBinding(id string, event string, value *any, callbacks ...func(js.V
 		event,
 		js.FuncOf(
 			func(_ js.Value, args []js.Value) any {
-				valueNeedToChanged := false
+				needToChanged := false
 				switch event {
 				case dom.JS_EVENT_KEYUP, dom.JS_EVENT_KEYDOWN, dom.JS_EVENT_CHANGE:
-					// change value when event is emitted
-					valueNeedToChanged = true
+					// change value when event is emitted before callbacks calls
+					*value = args[0].Get(dom.JS_TARGET).Get(dom.JS_VALUE).String()
+					needToChanged = true
 				case dom.JS_EVENT_FOCUS:
 					// set last focused
 					lastDomComponentFocused = id
 				}
-				for i := range callbacks {
-					callbacks[i](args[0])
+				if event != dom.JS_EVENT_FOCUS {
+					for i := range callbacks {
+						callbacks[i](args[0])
+					}
 				}
-				if valueNeedToChanged {
-					forceHasChanged(value, args[0].Get(dom.JS_TARGET).Get(dom.JS_VALUE).String())
+				if needToChanged {
+					// force state change but keep updated value
+					forceHasChanged(value, *value)
 				}
 				return nil
 			},

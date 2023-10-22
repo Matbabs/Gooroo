@@ -20,11 +20,16 @@ func App() o.DomComponent {
 	age, _ := o.UseState("42")
 	p, setP := o.UseState(Person{(*name).(string), (*age).(string)})
 
+	arr := []string{"Cat", "Dog", "Bird"}
+
 	o.UseEffect(func() {
 		fmt.Println("When person changed !")
 	}, p)
 
-	arr := []string{"Cat", "Dog", "Bird"}
+	handleChange := func(_ js.Value) {
+		fmt.Println("OnChange callback")
+		fmt.Println(*name)
+	}
 
 	handleSubmit := func(_ js.Value) {
 		setP(Person{(*name).(string), (*age).(string)})
@@ -40,7 +45,7 @@ func App() o.DomComponent {
 			o.Span("Name"),
 			o.Span("Age"),
 			o.Span("42"),
-			o.Input(o.OnChange(name)),
+			o.Input(o.OnChange(name, handleChange)),
 			o.Input(o.OnChange(age), o.Type("number")),
 			o.Button("Click", o.OnClick(handleSubmit), o.Title("")),
 		),
