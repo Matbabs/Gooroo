@@ -509,7 +509,7 @@ func Title(title string) DomComponent {
 
 // Declare une configuration CSS dans l'attribut d'un element html avec la valeur 'style=',
 // de manière a paramettrer un 'display: flex'
-func FlexLayout[T string | int](flow string, justify string, align string, gap T) DomComponent {
+func FlexLayout(flow string, justify string, align string, gap string) DomComponent {
 	gapStr := utils.AnyStr(gap)
 	sanitizeHtml(&flow)
 	sanitizeHtml(&justify)

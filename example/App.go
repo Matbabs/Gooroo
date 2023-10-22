@@ -20,8 +20,6 @@ func App() o.DomComponent {
 	age, _ := o.UseState("42")
 	p, setP := o.UseState(Person{(*name).(string), (*age).(string)})
 
-	arr := []string{"Cat", "Dog", "Bird"}
-
 	o.UseEffect(func() {
 		fmt.Println("When person changed !")
 	}, p)
@@ -50,15 +48,14 @@ func App() o.DomComponent {
 			o.Button("Click", o.OnClick(handleSubmit), o.Title("")),
 		),
 		o.H2("From Store"),
-		o.P((*name).(string)),
-		o.P((*age).(string)),
+		o.Div(o.FlexLayout("row", "left", "center", "20px"),
+			o.P((*name).(string)),
+			o.P((*age).(string)),
+		),
 		o.H2("From State"),
-		o.P((*p).(Person).name+" "+(*p).(Person).age),
-		o.H2("For Animals"),
-		o.Div(
-			o.For(arr, func(i int) o.DomComponent {
-				return o.P(arr[i])
-			}),
+		o.Div(o.FlexLayout("row", "left", "center", "20px"),
+			o.P((*p).(Person).name),
+			o.P((*p).(Person).age),
 		),
 	)
 }
