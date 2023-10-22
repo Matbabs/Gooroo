@@ -44,7 +44,7 @@ func App() o.DomComponent {
 		o.Div(o.GridLayout(3, 0, "20px"),
 			o.Span("Name"),
 			o.Span("Age"),
-			o.Span("42"),
+			o.Span(""),
 			o.Input(o.OnChange(name, handleChange)),
 			o.Input(o.OnChange(age), o.Type("number")),
 			o.Button("Click", o.OnClick(handleSubmit), o.Title("")),

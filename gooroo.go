@@ -106,7 +106,7 @@ func generateBinding(id string, event string, value *any, callbacks ...func(js.V
 			func(_ js.Value, args []js.Value) any {
 				needToChanged := false
 				switch event {
-				case dom.JS_EVENT_KEYUP, dom.JS_EVENT_KEYDOWN, dom.JS_EVENT_CHANGE:
+				case dom.JS_EVENT_CHANGE, dom.JS_EVENT_KEYUP, dom.JS_EVENT_KEYDOWN:
 					// change value when event is emitted before callbacks calls
 					*value = args[0].Get(dom.JS_TARGET).Get(dom.JS_VALUE).String()
 					needToChanged = true
@@ -114,7 +114,7 @@ func generateBinding(id string, event string, value *any, callbacks ...func(js.V
 					// set last focused
 					lastDomComponentFocused = id
 				}
-				if event != dom.JS_EVENT_FOCUS {
+				if event == dom.JS_EVENT_CHANGE || event == dom.JS_EVENT_CLICK {
 					for i := range callbacks {
 						callbacks[i](args[0])
 					}
@@ -304,7 +304,7 @@ func If(condition bool, insiders ...DomComponent) DomComponent {
 
 // Same operation as htmlDomComponent() but applies the function passed in parameter for the
 // whole array. The "key" element is used to make the link with the elements within the function.
-func For[T string | int | int32 | int64 | float32 | float64 | bool | any](elements []T, keyDomComponent func(_ int) DomComponent) DomComponent {
+func For[T string | int | int32 | int64 | float32 | float64 | bool | any](elements []T, keyDomComponent func(i int) DomComponent) DomComponent {
 	if len(elements) > 0 {
 		htmlStr := ""
 		for i := range elements {
