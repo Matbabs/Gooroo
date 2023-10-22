@@ -121,7 +121,7 @@ func generateBinding(id string, event string, value *any, callbacks ...func(js.V
 				}
 				if needToChanged {
 					// force state change but keep updated value
-					forceHasChanged(value, *value)
+					setHasChanged(value, *value)
 				}
 				return nil
 			},
@@ -157,7 +157,7 @@ func unsetBindings() {
 }
 
 // Change variable from store & updateState
-func forceHasChanged(variable *any, setVal any) {
+func setHasChanged(variable *any, setVal any) {
 	for key := range store {
 		if variable == &store[key].value {
 			store[key].value = setVal
@@ -222,7 +222,7 @@ func UseState(initialValue any) (actualValue *any, f func(setterValue any)) {
 	key := utils.CallerToKey(file, no)
 	utils.MapInit(key, store, &domStore{initialValue, false})
 	return &store[key].value, func(setVal any) {
-		forceHasChanged(&store[key].value, setVal)
+		setHasChanged(&store[key].value, setVal)
 	}
 }
 
