@@ -45,7 +45,7 @@ var (
 	stylesheets = []string{}
 
 	// Communication channel that generates a new rendering for each message sent within it.
-	state = make(chan bool)
+	state = make(chan bool, 1)
 
 	// List of DomBindings registered for the application rendering.
 	bindings = make(map[string][]domBinding)
@@ -207,9 +207,7 @@ func Render(context func()) {
 // Called to trigger in parallel a message sending in the chan state and consequently
 // request the new rendering of the application.
 func updateState() {
-	go func() {
-		state <- true
-	}()
+	state <- true
 }
 
 // Returns a stateful value, and a function to update it.
