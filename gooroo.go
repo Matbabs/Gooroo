@@ -438,9 +438,19 @@ func Img(insiders ...DomComponent) DomComponent {
 	return htmlDomComponent(dom.HTML_IMG_OPENER, "", insiders...)
 }
 
+// Declare an html element with the <i> tag.
+func I(insiders ...DomComponent) DomComponent {
+	return htmlDomComponent(dom.HTML_I_OPENER, "", insiders...)
+}
+
 // Declare an html element with the <br> tag.
 func Br() DomComponent {
 	return htmlDomComponent(dom.HTML_BR_OPENER, "")
+}
+
+// Declare an html element with the <hr> tag.
+func Hr() DomComponent {
+	return htmlDomComponent(dom.HTML_HR_OPENER, "")
 }
 
 // DomComponentsParams
@@ -480,7 +490,7 @@ func Value(value string) DomComponent {
 // Declare an attribute of an html element with the value 'id='
 func Id(id string) DomComponent {
 	sanitizeHtml(&id)
-	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_TYPE, id) }
+	return func() string { return fmt.Sprintf("%s%s'%s'", dom.ELEMENT_PARAM, dom.HTML_PARAM_ID, id) }
 }
 
 // Declare an attribute of an html element with the value 'type='
