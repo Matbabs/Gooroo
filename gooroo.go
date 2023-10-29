@@ -44,6 +44,9 @@ var (
 	// List of paths to add CSS style sheets already imported into the website.
 	stylesheets = []string{}
 
+	// List of paths to add Js scripts already imported into the website.
+	scripts = []string{}
+
 	// Communication channel that generates a new rendering for each message sent within it.
 	state = make(chan bool, 1)
 
@@ -73,6 +76,16 @@ func Css(filepath string) {
 		document.Get(dom.HTML_HEAD).Call(dom.JS_APPEND_CHILD, elem)
 		elem.Set(dom.JS_REL, dom.HTML_STYLESHEET)
 		elem.Set(dom.JS_HREF, filepath)
+	}
+}
+
+// Hangs a Js file in the <head> content of the website.
+func Js(filepath string) {
+	if !utils.Contains(scripts, filepath) {
+		scripts = append(scripts, filepath)
+		elem := document.Call(dom.JS_CREATE_ELEMENT, dom.HTML_SCRIPT)
+		document.Get(dom.HTML_HEAD).Call(dom.JS_APPEND_CHILD, elem)
+		elem.Set(dom.JS_SRC, filepath)
 	}
 }
 
