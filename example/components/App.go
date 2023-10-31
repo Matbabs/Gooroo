@@ -1,4 +1,4 @@
-package main
+package components
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ type Person struct {
 
 func App() o.DomComponent {
 
-	o.Css("App.css")
+	o.Css("components/App.css")
 
 	name, _ := o.UseState("Paul")
 	age, _ := o.UseState("42")
